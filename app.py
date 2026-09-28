@@ -15,316 +15,282 @@ st.set_page_config(
     page_title="BTC 15M Predictor",
     page_icon="₿",
     layout="centered",
+    initial_sidebar_state="collapsed",
 )
 
 NY = ZoneInfo("America/New_York")
 
 SERIES = "KXBTC15M"
 
+REFRESH_SECONDS = 10
+PREVIEW_SECONDS = 180
+POSITION_PERCENT = 25
+MIN_EXPECTED_RETURN = 0.10
+
+KRAKEN_URL = "https://api.kraken.com/0/public/OHLC"
+
 KALSHI_HOSTS = [
     "https://external-api.kalshi.com/trade-api/v2",
     "https://api.elections.kalshi.com/trade-api/v2",
 ]
 
-REFRESH_SECONDS = 10
-PREVIEW_SECONDS = 180
-MIN_EXPECTED_RETURN = 0.10
-POSITION_SIZE = 25
-
 
 # ============================================================
-# ESTILO — PARECIDO AL BOT 1
+# ESTILO
 # ============================================================
 
 st.markdown(
     """
-    <style>
+<style>
 
-    .stApp {
-        background:
-            radial-gradient(
-                circle at top right,
-                rgba(20,45,75,.35),
-                transparent 40%
-            ),
-            #070b14;
-    }
+html, body, [class*="css"] {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.stApp {
+    background:
+        radial-gradient(circle at top, #18212b 0%, #0b0f14 45%, #070a0e 100%);
+    color: #f5f7fa;
+}
+
+.block-container {
+    max-width: 720px;
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+}
+
+.header {
+    background: linear-gradient(135deg, #151d27, #0c1117);
+    border: 1px solid #283442;
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.30);
+}
+
+.header-title {
+    font-size: 25px;
+    font-weight: 800;
+    letter-spacing: .5px;
+}
+
+.header-sub {
+    color: #9ba8b7;
+    font-size: 13px;
+    margin-top: 3px;
+}
+
+.live {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: rgba(34,197,94,.12);
+    border: 1px solid rgba(34,197,94,.35);
+    color: #58e58a;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.card {
+    background: rgba(16,22,29,.96);
+    border: 1px solid #273340;
+    border-radius: 16px;
+    padding: 16px;
+    margin: 10px 0;
+    box-shadow: 0 8px 25px rgba(0,0,0,.20);
+}
+
+.section-title {
+    color: #8d9aaa;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+}
+
+.signal {
+    text-align: center;
+    font-size: 34px;
+    font-weight: 900;
+    padding: 13px;
+    border-radius: 14px;
+    margin: 8px 0 12px;
+}
+
+.signal-green {
+    background: rgba(34,197,94,.10);
+    border: 1px solid rgba(34,197,94,.40);
+    color: #4ade80;
+}
+
+.signal-red {
+    background: rgba(239,68,68,.10);
+    border: 1px solid rgba(239,68,68,.40);
+    color: #ff6868;
+}
+
+.prob {
+    text-align: center;
+    font-size: 37px;
+    font-weight: 900;
+    margin: 2px 0;
+}
+
+.center {
+    text-align: center;
+}
+
+.muted {
+    color: #8f9baa;
+    font-size: 12px;
+}
+
+.big {
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+}
+
+.metric {
+    background: #111821;
+    border: 1px solid #26313d;
+    border-radius: 12px;
+    padding: 11px;
+}
+
+.metric-label {
+    color: #7f8b99;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+}
+
+.metric-value {
+    font-size: 17px;
+    font-weight: 800;
+    margin-top: 4px;
+}
+
+.green {
+    color: #4ade80;
+}
+
+.red {
+    color: #ff6868;
+}
+
+.yellow {
+    color: #facc15;
+}
+
+.blue {
+    color: #60a5fa;
+}
+
+.alert {
+    border: 1px solid rgba(250,204,21,.45);
+    background: rgba(250,204,21,.08);
+    color: #fde68a;
+    border-radius: 12px;
+    padding: 12px;
+    font-weight: 800;
+    text-align: center;
+    margin-top: 8px;
+}
+
+.good {
+    border: 1px solid rgba(34,197,94,.35);
+    background: rgba(34,197,94,.07);
+    color: #86efac;
+    border-radius: 12px;
+    padding: 11px;
+    text-align: center;
+    font-weight: 700;
+}
+
+.wait {
+    border: 1px solid rgba(250,204,21,.35);
+    background: rgba(250,204,21,.07);
+    color: #fde68a;
+    border-radius: 12px;
+    padding: 11px;
+    text-align: center;
+    font-weight: 700;
+}
+
+.footer {
+    text-align: center;
+    color: #657180;
+    font-size: 10px;
+    padding: 12px;
+}
+
+@media (max-width: 500px) {
 
     .block-container {
-        max-width: 760px;
-        padding-top: 1rem;
-        padding-bottom: 2rem;
-    }
-
-    .header {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        margin-bottom: 12px;
-    }
-
-    .btc-logo {
-        width: 54px;
-        height: 54px;
-        border-radius: 50%;
-        background: #f7931a;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 31px;
-        font-weight: 900;
+        padding-left: .55rem;
+        padding-right: .55rem;
     }
 
     .header-title {
-        font-size: 1.65rem;
-        font-weight: 850;
-        letter-spacing: .5px;
-    }
-
-    .header-sub {
-        color: #8d96a8;
-        font-size: .9rem;
-    }
-
-    .live {
-        margin-left: auto;
-        text-align: right;
-        color: #47e889;
-        font-size: .9rem;
-    }
-
-    .card {
-        background: linear-gradient(
-            145deg,
-            rgba(19,31,52,.96),
-            rgba(8,14,26,.98)
-        );
-        border: 1px solid #253755;
-        border-radius: 18px;
-        padding: 18px;
-        margin: 10px 0;
-        box-shadow: 0 8px 30px rgba(0,0,0,.18);
-    }
-
-    .card-red {
-        border-color: #b63b50;
-    }
-
-    .card-green {
-        border-color: #27a96b;
-    }
-
-    .section-title {
-        color: #aeb8ca;
-        font-size: .92rem;
-        font-weight: 800;
-        letter-spacing: .4px;
-        margin-bottom: 8px;
-    }
-
-    .signal-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
+        font-size: 22px;
     }
 
     .signal {
-        font-size: 2.35rem;
-        font-weight: 900;
-        line-height: 1;
-    }
-
-    .signal-red {
-        color: #ff5964;
-    }
-
-    .signal-green {
-        color: #47e889;
+        font-size: 29px;
     }
 
     .prob {
-        font-size: 2.6rem;
-        font-weight: 900;
-        color: #47e889;
-        text-align: right;
+        font-size: 32px;
     }
 
-    .muted {
-        color: #8d96a8;
-        font-size: .86rem;
+    .big {
+        font-size: 19px;
     }
 
-    .price {
-        font-size: 1.75rem;
-        font-weight: 850;
-        margin-top: 8px;
+    .metric-value {
+        font-size: 15px;
     }
+}
 
-    .mini-card {
-        background: #0d1728;
-        border: 1px solid #253755;
-        border-radius: 15px;
-        padding: 14px;
-        min-height: 85px;
-    }
-
-    .mini-title {
-        color: #8d96a8;
-        font-size: .75rem;
-        text-transform: uppercase;
-    }
-
-    .mini-value {
-        font-size: 1.35rem;
-        font-weight: 850;
-        margin-top: 5px;
-    }
-
-    .guide-red {
-        border: 1px solid #d63e55;
-        background: rgba(90,20,35,.20);
-        border-radius: 17px;
-        padding: 17px;
-        margin: 10px 0;
-    }
-
-    .guide-green {
-        border: 1px solid #28b774;
-        background: rgba(15,90,55,.20);
-        border-radius: 17px;
-        padding: 17px;
-        margin: 10px 0;
-    }
-
-    .guide-title {
-        font-size: 1.35rem;
-        font-weight: 900;
-    }
-
-    .kalshi-bar {
-        height: 26px;
-        display: flex;
-        overflow: hidden;
-        border-radius: 10px;
-        margin-top: 12px;
-    }
-
-    .bar-up {
-        background: #43df89;
-        color: #06150d;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 800;
-    }
-
-    .bar-down {
-        background: #ff5964;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 800;
-    }
-
-    .alert {
-        background: rgba(100,90,15,.35);
-        border: 1px solid #9b8d22;
-        border-radius: 16px;
-        padding: 15px;
-        color: #f0e58b;
-        margin: 10px 0;
-    }
-
-    .favorable {
-        background: rgba(20,105,65,.40);
-        border: 1px solid #2ac477;
-        color: #72efa6;
-        border-radius: 14px;
-        padding: 15px;
-        font-weight: 800;
-        font-size: 1.1rem;
-        margin-top: 10px;
-    }
-
-    .wait {
-        background: rgba(90,80,20,.30);
-        border: 1px solid #a69731;
-        color: #eee28a;
-        border-radius: 14px;
-        padding: 15px;
-        font-weight: 800;
-        margin-top: 10px;
-    }
-
-    .next-card {
-        background: #111c30;
-        border: 1px solid #455b7e;
-        border-radius: 16px;
-        padding: 16px;
-        margin-top: 10px;
-    }
-
-    @media (max-width: 600px) {
-
-        .block-container {
-            padding-left: .7rem;
-            padding-right: .7rem;
-        }
-
-        .signal {
-            font-size: 2rem;
-        }
-
-        .prob {
-            font-size: 2.2rem;
-        }
-
-        .price {
-            font-size: 1.5rem;
-        }
-    }
-
-    </style>
-    """,
+</style>
+""",
     unsafe_allow_html=True,
 )
 
 
 # ============================================================
-# UTILIDADES
+# FUNCIONES
 # ============================================================
 
-def now_utc():
-    return datetime.now(timezone.utc)
+def now_ny():
+    return datetime.now(timezone.utc).astimezone(NY)
 
 
-def parse_dt(value):
-
-    if not value:
+def parse_time(value):
+    if value is None:
         return None
 
     try:
-
         if isinstance(value, (int, float)):
             return datetime.fromtimestamp(
-                float(value),
-                tz=timezone.utc,
+                float(value), tz=timezone.utc
             )
 
-        value = str(value)
+        text = str(value).replace("Z", "+00:00")
 
-        if value.endswith("Z"):
-            value = value[:-1] + "+00:00"
-
-        dt = datetime.fromisoformat(value)
+        dt = datetime.fromisoformat(text)
 
         if dt.tzinfo is None:
-            dt = dt.replace(
-                tzinfo=timezone.utc
-            )
+            dt = dt.replace(tzinfo=timezone.utc)
 
         return dt.astimezone(timezone.utc)
 
@@ -333,89 +299,92 @@ def parse_dt(value):
 
 
 def money(value):
-
-    if value is None:
+    try:
+        return f"${float(value):,.2f}"
+    except Exception:
         return "—"
-
-    return f"${value:,.2f}"
 
 
 def pct(value):
-
-    if value is None:
-        return "—"
-
-    return f"{value * 100:.1f}%"
-
-
-def countdown(seconds):
-
-    if seconds is None:
-        return "—"
-
-    seconds = max(0, int(seconds))
-
-    minutes = seconds // 60
-    secs = seconds % 60
-
-    return f"{minutes:02d}:{secs:02d}"
-
-
-def change_percent(old, new):
-
-    if old is None or new is None or old == 0:
-        return 0.0
-
-    return (new - old) / old
-
-
-# ============================================================
-# KRAKEN — BTC
-# ============================================================
-
-@st.cache_data(
-    ttl=8,
-    show_spinner=False,
-)
-def get_btc_history():
-
-    url = "https://api.kraken.com/0/public/OHLC"
-
-    params = {
-        "pair": "XBTUSD",
-        "interval": 1,
-    }
-
     try:
+        return f"{float(value) * 100:.1f}%"
+    except Exception:
+        return "—"
 
+
+def get_json(url, params=None, timeout=8):
+    try:
         response = requests.get(
             url,
             params=params,
-            timeout=10,
+            timeout=timeout,
         )
 
         response.raise_for_status()
 
-        data = response.json()
+        return response.json()
 
-        if data.get("error"):
-            return []
+    except Exception:
+        return None
 
-        result = data.get(
-            "result",
-            {},
+
+# ============================================================
+# BTC KRAKEN
+# ============================================================
+
+def get_btc_price():
+    data = get_json(
+        KRAKEN_URL,
+        params={
+            "pair": "XBTUSD",
+            "interval": 1,
+        },
+    )
+
+    if not data:
+        return None
+
+    try:
+        result = data["result"]
+
+        pair_key = next(
+            key for key in result
+            if key != "last"
         )
 
-        pair_key = None
+        candles = result[pair_key]
 
-        for key in result:
+        if not candles:
+            return None
 
-            if key != "last":
-                pair_key = key
-                break
+        last = candles[-1]
 
-        if not pair_key:
-            return []
+        return float(last[4])
+
+    except Exception:
+        return None
+
+
+def get_btc_history():
+    data = get_json(
+        KRAKEN_URL,
+        params={
+            "pair": "XBTUSD",
+            "interval": 1,
+        },
+        timeout=10,
+    )
+
+    if not data:
+        return []
+
+    try:
+        result = data["result"]
+
+        pair_key = next(
+            key for key in result
+            if key != "last"
+        )
 
         candles = result[pair_key]
 
@@ -423,414 +392,145 @@ def get_btc_history():
 
         for candle in candles:
 
-            try:
-
-                output.append(
-                    {
-                        "time": datetime.fromtimestamp(
-                            float(candle[0]),
-                            tz=timezone.utc,
-                        ),
-                        "open": float(candle[1]),
-                        "high": float(candle[2]),
-                        "low": float(candle[3]),
-                        "close": float(candle[4]),
-                    }
-                )
-
-            except Exception:
-                continue
+            output.append(
+                {
+                    "time": datetime.fromtimestamp(
+                        float(candle[0]),
+                        tz=timezone.utc,
+                    ),
+                    "open": float(candle[1]),
+                    "high": float(candle[2]),
+                    "low": float(candle[3]),
+                    "close": float(candle[4]),
+                }
+            )
 
         return output
 
     except Exception:
-
         return []
-
-
-def price_before(candles, target_time):
-
-    valid = [
-        candle
-        for candle in candles
-        if candle["time"] <= target_time
-    ]
-
-    if not valid:
-        return None
-
-    return valid[-1]["close"]
-
-
-def current_btc_price(candles):
-
-    if not candles:
-        return None
-
-    return candles[-1]["close"]
-
-
-# ============================================================
-# MODELO
-# ============================================================
-
-def calculate_signal(
-    candles,
-    market_open,
-):
-
-    if not candles:
-        return None
-
-    # SOLAMENTE información anterior
-    # a la apertura de la vela.
-
-    previous = [
-        candle
-        for candle in candles
-        if candle["time"] < market_open
-    ]
-
-    if len(previous) < 20:
-        return None
-
-    latest = previous[-1]
-
-    latest_time = latest["time"]
-
-    p1 = price_before(
-        previous,
-        latest_time - timedelta(minutes=1),
-    )
-
-    p3 = price_before(
-        previous,
-        latest_time - timedelta(minutes=3),
-    )
-
-    p5 = price_before(
-        previous,
-        latest_time - timedelta(minutes=5),
-    )
-
-    p10 = price_before(
-        previous,
-        latest_time - timedelta(minutes=10),
-    )
-
-    p15 = price_before(
-        previous,
-        latest_time - timedelta(minutes=15),
-    )
-
-    c1 = change_percent(
-        p1,
-        latest["close"],
-    )
-
-    c3 = change_percent(
-        p3,
-        latest["close"],
-    )
-
-    c5 = change_percent(
-        p5,
-        latest["close"],
-    )
-
-    c10 = change_percent(
-        p10,
-        latest["close"],
-    )
-
-    c15 = change_percent(
-        p15,
-        latest["close"],
-    )
-
-    score = (
-        c1 * 0.10
-        + c3 * 0.20
-        + c5 * 0.25
-        + c10 * 0.25
-        + c15 * 0.20
-    )
-
-    probability = (
-        0.50
-        + abs(score) * 13
-    )
-
-    probability = max(
-        0.55,
-        min(0.84, probability),
-    )
-
-    direction = (
-        "SUBE"
-        if score >= 0
-        else "BAJA"
-    )
-
-    return {
-        "direction": direction,
-        "probability": probability,
-        "score": score,
-        "price": latest["close"],
-        "c1": c1,
-        "c3": c3,
-        "c5": c5,
-        "c10": c10,
-        "c15": c15,
-    }
-
-
-def strength(probability):
-
-    if probability >= 0.70:
-        return "FUERTE"
-
-    if probability >= 0.62:
-        return "MEDIA"
-
-    return "BAJA"
-
-
-# ============================================================
-# SEÑAL FIJA POR VELA
-# ============================================================
-
-@st.cache_data(
-    ttl=900,
-    show_spinner=False,
-)
-def locked_signal(
-    ticker,
-    open_time_iso,
-):
-
-    market_open = parse_dt(
-        open_time_iso
-    )
-
-    candles = get_btc_history()
-
-    signal = calculate_signal(
-        candles,
-        market_open,
-    )
-
-    if signal is None:
-
-        return {
-            "direction": "SUBE",
-            "probability": 0.55,
-            "score": 0,
-            "price": None,
-            "c1": 0,
-            "c3": 0,
-            "c5": 0,
-            "c10": 0,
-            "c15": 0,
-        }
-
-    return signal
 
 
 # ============================================================
 # KALSHI
 # ============================================================
 
-def get_markets():
+def get_kalshi_markets():
 
     for host in KALSHI_HOSTS:
 
-        try:
+        url = f"{host}/markets"
 
-            response = requests.get(
-                f"{host}/markets",
-                params={
-                    "series_ticker": SERIES,
-                    "status": "open",
-                    "limit": 100,
-                },
-                timeout=10,
-            )
+        data = get_json(
+            url,
+            params={
+                "series_ticker": SERIES,
+                "status": "open",
+                "limit": 100,
+            },
+            timeout=10,
+        )
 
-            if response.status_code != 200:
-                continue
-
-            data = response.json()
-
-            markets = data.get(
-                "markets",
-                [],
-            )
-
-            if markets:
-                return markets
-
-        except Exception:
+        if not data:
             continue
+
+        markets = data.get("markets", [])
+
+        if markets:
+            return markets
 
     return []
 
 
-def current_market(markets):
+def get_active_market():
 
-    current = now_utc()
+    markets = get_kalshi_markets()
 
-    candidates = []
+    if not markets:
+        return None
+
+    current = datetime.now(timezone.utc)
+
+    valid = []
 
     for market in markets:
 
-        open_time = parse_dt(
+        open_time = parse_time(
             market.get("open_time")
         )
 
-        close_time = parse_dt(
+        close_time = parse_time(
             market.get("close_time")
         )
 
         if not open_time or not close_time:
             continue
 
-        if (
-            open_time <= current
-            < close_time
-        ):
+        if open_time <= current < close_time:
+            valid.append(market)
 
-            candidates.append(
-                (
-                    open_time,
-                    market,
-                )
-            )
-
-    if not candidates:
+    if not valid:
         return None
 
-    candidates.sort(
-        key=lambda x: x[0],
-        reverse=True,
+    valid.sort(
+        key=lambda x: parse_time(
+            x.get("close_time")
+        ) or current
     )
 
-    return candidates[0][1]
+    return valid[0]
 
 
-def next_market(
-    markets,
-    current_ticker=None,
-):
-
-    current = now_utc()
-
-    candidates = []
-
-    for market in markets:
-
-        ticker = market.get(
-            "ticker"
-        )
-
-        if ticker == current_ticker:
-            continue
-
-        open_time = parse_dt(
-            market.get("open_time")
-        )
-
-        if not open_time:
-            continue
-
-        if open_time > current:
-
-            candidates.append(
-                (
-                    open_time,
-                    market,
-                )
-            )
-
-    if not candidates:
-        return None
-
-    candidates.sort(
-        key=lambda x: x[0]
-    )
-
-    return candidates[0][1]
-
+# ============================================================
+# PRECIO / TARGET DE KALSHI
+# ============================================================
 
 def kalshi_probability(market):
 
-    bid = market.get(
-        "yes_bid_dollars"
-    )
+    yes_bid = market.get("yes_bid_dollars")
+    yes_ask = market.get("yes_ask_dollars")
+    last = market.get("last_price_dollars")
 
-    ask = market.get(
-        "yes_ask_dollars"
-    )
-
-    last = market.get(
-        "last_price_dollars"
-    )
+    values = []
 
     try:
-        bid = (
-            float(bid)
-            if bid is not None
-            else None
-        )
+        if yes_bid is not None:
+            values.append(float(yes_bid))
+
+        if yes_ask is not None:
+            values.append(float(yes_ask))
+
+        if len(values) >= 2:
+            return max(
+                0.01,
+                min(
+                    0.99,
+                    sum(values[:2]) / 2
+                ),
+            )
+
+        if last is not None:
+            return max(
+                0.01,
+                min(
+                    0.99,
+                    float(last)
+                ),
+            )
+
     except Exception:
-        bid = None
+        pass
 
-    try:
-        ask = (
-            float(ask)
-            if ask is not None
-            else None
-        )
-    except Exception:
-        ask = None
-
-    try:
-        last = (
-            float(last)
-            if last is not None
-            else None
-        )
-    except Exception:
-        last = None
-
-    if (
-        bid is not None
-        and ask is not None
-    ):
-
-        return (
-            bid + ask
-        ) / 2
-
-    if last is not None:
-        return last
-
-    if bid is not None:
-        return bid
-
-    if ask is not None:
-        return ask
-
-    return None
+    return 0.50
 
 
-def target_price(market):
+def get_target(market):
 
     for field in [
-        "custom_strike",
-        "strike",
         "floor_strike",
+        "custom_strike",
         "cap_strike",
+        "strike",
     ]:
 
         value = market.get(field)
@@ -839,6 +539,7 @@ def target_price(market):
 
             try:
                 return float(value)
+
             except Exception:
                 pass
 
@@ -846,915 +547,869 @@ def target_price(market):
 
 
 # ============================================================
-# CONFIRMACIÓN PROGRESIVA
+# MODELO
 # ============================================================
 
-def progressive_confirmation(
-    direction,
-    candles,
-):
+def percentage_change(old, new):
 
-    if not candles:
+    if old == 0:
         return 0
 
-    if len(candles) < 15:
-        return 0
+    return (new - old) / old
 
-    latest = candles[-1]
 
-    checks = 0
+def calculate_model(history, open_time):
 
-    p3 = price_before(
-        candles,
-        latest["time"]
-        - timedelta(minutes=3),
+    if not history:
+        return 0.50, "MEDIA"
+
+    before_open = [
+        x for x in history
+        if x["time"] < open_time
+    ]
+
+    if len(before_open) < 20:
+        return 0.50, "MEDIA"
+
+    closes = [
+        x["close"]
+        for x in before_open
+    ]
+
+    current = closes[-1]
+
+    def change(minutes):
+
+        if len(closes) <= minutes:
+            return 0
+
+        old = closes[-1 - minutes]
+
+        return percentage_change(
+            old,
+            current,
+        )
+
+    c1 = change(1)
+    c3 = change(3)
+    c5 = change(5)
+    c10 = change(10)
+    c15 = change(15)
+
+    momentum = (
+        c1 * 0.10
+        + c3 * 0.20
+        + c5 * 0.25
+        + c10 * 0.25
+        + c15 * 0.20
     )
 
-    p5 = price_before(
-        candles,
-        latest["time"]
-        - timedelta(minutes=5),
-    )
+    recent = closes[-30:]
 
-    p10 = price_before(
-        candles,
-        latest["time"]
-        - timedelta(minutes=10),
-    )
+    if len(recent) > 2:
 
-    c3 = change_percent(
-        p3,
-        latest["close"],
-    )
+        returns = []
 
-    c5 = change_percent(
-        p5,
-        latest["close"],
-    )
+        for i in range(1, len(recent)):
+            returns.append(
+                percentage_change(
+                    recent[i - 1],
+                    recent[i],
+                )
+            )
 
-    c10 = change_percent(
-        p10,
-        latest["close"],
-    )
+        avg = sum(returns) / len(returns)
 
-    if direction == "SUBE":
+        variance = sum(
+            (x - avg) ** 2
+            for x in returns
+        ) / len(returns)
 
-        if c3 >= 0:
-            checks += 1
-
-        if c5 >= 0:
-            checks += 1
-
-        if c10 >= 0:
-            checks += 1
+        volatility = math.sqrt(variance)
 
     else:
+        volatility = 0
 
-        if c3 <= 0:
-            checks += 1
+    score = momentum * 100000
 
-        if c5 <= 0:
-            checks += 1
+    volatility_factor = min(
+        1.0,
+        max(
+            0.35,
+            1.0 - volatility * 1200,
+        ),
+    )
 
-        if c10 <= 0:
-            checks += 1
+    score *= volatility_factor
 
-    return checks
+    probability = 0.50 + (
+        max(
+            -0.34,
+            min(
+                0.34,
+                score,
+            ),
+        )
+    )
+
+    probability = max(
+        0.55,
+        min(
+            0.84,
+            probability,
+        ),
+    )
+
+    distance = abs(probability - 0.50)
+
+    if distance >= 0.22:
+        strength = "FUERTE"
+
+    elif distance >= 0.13:
+        strength = "MEDIA"
+
+    else:
+        strength = "BAJA"
+
+    return probability, strength
 
 
 # ============================================================
-# GUÍA PARA CIERRE
+# SEÑAL FIJA
+# ============================================================
+
+@st.cache_data(
+    show_spinner=False,
+    ttl=900,
+)
+def locked_signal(
+    ticker,
+    open_time_iso,
+):
+
+    open_time = parse_time(open_time_iso)
+
+    history = get_btc_history()
+
+    probability, strength = calculate_model(
+        history,
+        open_time,
+    )
+
+    direction = (
+        "SUBE"
+        if probability >= 0.50
+        else "BAJA"
+    )
+
+    return {
+        "direction": direction,
+        "probability": probability,
+        "strength": strength,
+    }
+
+
+# ============================================================
+# PRÓXIMA VELA
+# ============================================================
+
+def preview_signal(
+    history,
+    next_open,
+):
+
+    probability, strength = calculate_model(
+        history,
+        next_open,
+    )
+
+    direction = (
+        "SUBE"
+        if probability >= 0.50
+        else "BAJA"
+    )
+
+    return direction, probability, strength
+
+
+# ============================================================
+# ENTRADA
+# ============================================================
+
+def calculate_max_entry(probability):
+
+    return probability / (
+        1 + MIN_EXPECTED_RETURN
+    )
+
+
+# ============================================================
+# PROYECCIÓN
 # ============================================================
 
 def projected_close(
-    btc,
-    remaining_seconds,
-    candles,
+    btc_price,
+    history,
+    seconds_left,
 ):
 
-    if btc is None:
-        return None, None
+    if not history or seconds_left <= 0:
+        return btc_price
 
-    if not candles or len(candles) < 3:
-        return btc, 0
+    recent = [
+        x["close"]
+        for x in history[-6:]
+    ]
 
-    p3 = price_before(
-        candles,
-        candles[-1]["time"]
-        - timedelta(minutes=3),
+    if len(recent) < 2:
+        return btc_price
+
+    first = recent[0]
+    last = recent[-1]
+
+    elapsed_minutes = max(
+        1,
+        len(recent) - 1,
     )
-
-    if p3 is None:
-        return btc, 0
-
-    elapsed_seconds = 180
 
     velocity = (
-        btc - p3
-    ) / elapsed_seconds
+        last - first
+    ) / elapsed_minutes
 
-    projected = (
-        btc
-        + velocity
-        * max(0, remaining_seconds)
+    remaining_minutes = (
+        seconds_left / 60
     )
 
-    return projected, velocity
-
-
-# ============================================================
-# MEJOR ENTRADA
-# ============================================================
-
-def maximum_entry(probability):
-
-    if probability is None:
-        return None
-
-    return (
-        probability
-        / (1 + MIN_EXPECTED_RETURN)
+    projection = (
+        btc_price
+        + velocity * remaining_minutes
     )
+
+    return projection
 
 
 # ============================================================
 # HEADER
 # ============================================================
 
-def render_header():
+current_time = now_ny()
 
-    current_ny = datetime.now(NY)
+st.markdown(
+    f"""
+<div class="header">
+
+    <div class="header-title">
+        ₿ BTC • 15 MIN
+    </div>
+
+    <div class="header-sub">
+        Predictor • Kalshi
+    </div>
+
+    <div class="live">
+        ● EN VIVO
+    </div>
+
+    <div class="muted" style="margin-top:8px;">
+        {current_time.strftime("%m/%d/%Y • %I:%M:%S %p")} New York
+    </div>
+
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+
+# ============================================================
+# OBTENER MERCADO
+# ============================================================
+
+market = get_active_market()
+
+btc_price = get_btc_price()
+
+history = get_btc_history()
+
+
+if not market:
+
+    st.markdown(
+        """
+<div class="card">
+
+    <div class="section-title">
+        ESTADO
+    </div>
+
+    <div class="center">
+        <div class="big">
+            Esperando mercado BTC 15M
+        </div>
+
+        <div class="muted" style="margin-top:7px;">
+            Kalshi todavía no devolvió una vela activa.
+        </div>
+    </div>
+
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    time.sleep(REFRESH_SECONDS)
+    st.rerun()
+
+
+# ============================================================
+# DATOS DEL MERCADO
+# ============================================================
+
+ticker = market.get(
+    "ticker",
+    "KXBTC15M",
+)
+
+open_time = parse_time(
+    market.get("open_time")
+)
+
+close_time = parse_time(
+    market.get("close_time")
+)
+
+if not open_time or not close_time:
+
+    st.error(
+        "No se pudo leer el horario del mercado."
+    )
+
+    time.sleep(REFRESH_SECONDS)
+    st.rerun()
+
+
+# ============================================================
+# SEÑAL BLOQUEADA
+# ============================================================
+
+signal = locked_signal(
+    ticker,
+    open_time.isoformat(),
+)
+
+direction = signal["direction"]
+
+model_probability = signal["probability"]
+
+strength = signal["strength"]
+
+
+# ============================================================
+# TIEMPO
+# ============================================================
+
+now_utc = datetime.now(timezone.utc)
+
+seconds_left = max(
+    0,
+    int(
+        (
+            close_time - now_utc
+        ).total_seconds()
+    ),
+)
+
+minutes_left = seconds_left // 60
+
+seconds_only = seconds_left % 60
+
+
+# ============================================================
+# KALSHI
+# ============================================================
+
+kalshi_prob = kalshi_probability(
+    market
+)
+
+kalshi_up = kalshi_prob
+
+kalshi_down = 1 - kalshi_prob
+
+target = get_target(market)
+
+
+# ============================================================
+# ENTRADA
+# ============================================================
+
+max_entry = calculate_max_entry(
+    model_probability
+)
+
+current_entry = kalshi_prob
+
+
+entry_good = (
+    current_entry <= max_entry
+)
+
+
+# ============================================================
+# PROYECCIÓN
+# ============================================================
+
+projection = projected_close(
+    btc_price,
+    history,
+    seconds_left,
+)
+
+if btc_price is not None and target is not None:
+
+    distance_target = (
+        target - btc_price
+    )
+
+else:
+
+    distance_target = None
+
+
+# ============================================================
+# LECTURA PRINCIPAL
+# ============================================================
+
+signal_class = (
+    "signal-green"
+    if direction == "SUBE"
+    else "signal-red"
+)
+
+signal_icon = (
+    "🟢"
+    if direction == "SUBE"
+    else "🔴"
+)
+
+direction_class = (
+    "green"
+    if direction == "SUBE"
+    else "red"
+)
+
+
+st.markdown(
+    f"""
+<div class="card">
+
+    <div class="section-title">
+        LECTURA ACTUAL
+    </div>
+
+    <div class="signal {signal_class}">
+        {signal_icon} {direction}
+    </div>
+
+    <div class="prob">
+        {model_probability * 100:.1f}%
+    </div>
+
+    <div class="center muted">
+        Probabilidad del modelo
+    </div>
+
+    <div class="grid" style="margin-top:12px;">
+
+        <div class="metric">
+            <div class="metric-label">
+                Fuerza
+            </div>
+
+            <div class="metric-value {direction_class}">
+                {strength}
+            </div>
+        </div>
+
+        <div class="metric">
+            <div class="metric-label">
+                Vela
+            </div>
+
+            <div class="metric-value">
+                {ticker}
+            </div>
+        </div>
+
+    </div>
+
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+
+# ============================================================
+# BTC
+# ============================================================
+
+st.markdown(
+    f"""
+<div class="card">
+
+    <div class="section-title">
+        BTC EN VIVO
+    </div>
+
+    <div class="center">
+
+        <div class="big">
+            {money(btc_price)}
+        </div>
+
+        <div class="muted">
+            Precio actual de Bitcoin
+        </div>
+
+    </div>
+
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+
+# ============================================================
+# TARGET + COUNTDOWN
+# ============================================================
+
+target_text = (
+    money(target)
+    if target is not None
+    else "—"
+)
+
+distance_text = (
+    money(distance_target)
+    if distance_target is not None
+    else "—"
+)
+
+
+st.markdown(
+    f"""
+<div class="card">
+
+    <div class="section-title">
+        OBJETIVO Y CIERRE
+    </div>
+
+    <div class="grid">
+
+        <div class="metric">
+            <div class="metric-label">
+                Target Kalshi
+            </div>
+
+            <div class="metric-value blue">
+                {target_text}
+            </div>
+        </div>
+
+        <div class="metric">
+            <div class="metric-label">
+                Tiempo restante
+            </div>
+
+            <div class="metric-value yellow">
+                {minutes_left:02d}:{seconds_only:02d}
+            </div>
+        </div>
+
+        <div class="metric">
+            <div class="metric-label">
+                Distancia al target
+            </div>
+
+            <div class="metric-value">
+                {distance_text}
+            </div>
+        </div>
+
+        <div class="metric">
+            <div class="metric-label">
+                Cierre proyectado
+            </div>
+
+            <div class="metric-value">
+                {money(projection)}
+            </div>
+        </div>
+
+    </div>
+
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+
+# ============================================================
+# KALSHI LIVE
+# ============================================================
+
+kalshi_side = (
+    "SUBE"
+    if kalshi_up >= 0.50
+    else "BAJA"
+)
+
+kalshi_side_icon = (
+    "🟢"
+    if kalshi_side == "SUBE"
+    else "🔴"
+)
+
+kalshi_side_class = (
+    "green"
+    if kalshi_side == "SUBE"
+    else "red"
+)
+
+
+st.markdown(
+    f"""
+<div class="card">
+
+    <div class="section-title">
+        KALSHI EN VIVO
+    </div>
+
+    <div class="center">
+
+        <div class="big {kalshi_side_class}">
+            {kalshi_side_icon} {kalshi_side}
+        </div>
+
+    </div>
+
+    <div class="grid" style="margin-top:12px;">
+
+        <div class="metric">
+            <div class="metric-label">
+                SUBE
+            </div>
+
+            <div class="metric-value green">
+                {kalshi_up * 100:.1f}%
+            </div>
+        </div>
+
+        <div class="metric">
+            <div class="metric-label">
+                BAJA
+            </div>
+
+            <div class="metric-value red">
+                {kalshi_down * 100:.1f}%
+            </div>
+        </div>
+
+    </div>
+
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+
+# ============================================================
+# RADAR DE GIRO
+# ============================================================
+
+turn_detected = (
+    kalshi_side != direction
+    and abs(kalshi_prob - 0.50) >= 0.07
+)
+
+if turn_detected:
 
     st.markdown(
         f"""
-        <div class="header">
+<div class="alert">
+    🚨 ALERTA DE GIRO<br>
+    {direction} → {kalshi_side}
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 
-            <div class="btc-logo">₿</div>
+else:
 
-            <div>
-                <div class="header-title">
-                    BTC • 15 MIN
-                </div>
-
-                <div class="header-sub">
-                    Predictor • Kalshi
-                </div>
-            </div>
-
-            <div class="live">
-                🟢 EN VIVO<br>
-                {current_ny.strftime("%I:%M:%S %p")}
-            </div>
-
-        </div>
-        """,
+    st.markdown(
+        """
+<div class="good">
+    📡 RADAR<br>
+    Sin giro significativo
+</div>
+""",
         unsafe_allow_html=True,
     )
 
 
 # ============================================================
-# DASHBOARD
+# ENTRADA
 # ============================================================
 
-@st.fragment(
-    run_every=REFRESH_SECONDS
+entry_status = (
+    "FAVORABLE"
+    if entry_good
+    else "EN LÍMITE"
 )
-def dashboard():
 
-    render_header()
+entry_class = (
+    "good"
+    if entry_good
+    else "wait"
+)
 
-    markets = get_markets()
 
-    if not markets:
+st.markdown(
+    f"""
+<div class="card">
 
-        st.error(
-            "No se pudieron obtener los mercados de Kalshi."
-        )
+    <div class="section-title">
+        ENTRADA
+    </div>
 
-        return
+    <div class="grid">
 
-    market = current_market(
-        markets
-    )
-
-    if not market:
-
-        st.warning(
-            "No hay una vela BTC 15M activa."
-        )
-
-        return
-
-    ticker = market.get(
-        "ticker",
-        ""
-    )
-
-    open_time = parse_dt(
-        market.get("open_time")
-    )
-
-    close_time = parse_dt(
-        market.get("close_time")
-    )
-
-    if not open_time or not close_time:
-
-        st.error(
-            "El mercado no tiene horarios válidos."
-        )
-
-        return
-
-    # ========================================================
-    # SEÑAL FIJA
-    # ========================================================
-
-    signal = locked_signal(
-        ticker,
-        open_time.isoformat(),
-    )
-
-    direction = signal["direction"]
-    probability = signal["probability"]
-
-    # ========================================================
-    # DATOS EN VIVO
-    # ========================================================
-
-    candles = get_btc_history()
-
-    btc = current_btc_price(
-        candles
-    )
-
-    current = now_utc()
-
-    remaining = (
-        close_time - current
-    ).total_seconds()
-
-    kalshi_prob = kalshi_probability(
-        market
-    )
-
-    if kalshi_prob is not None:
-
-        kalshi_up = kalshi_prob
-        kalshi_down = (
-            1 - kalshi_prob
-        )
-
-        kalshi_direction = (
-            "SUBE"
-            if kalshi_up >= 0.50
-            else "BAJA"
-        )
-
-    else:
-
-        kalshi_up = None
-        kalshi_down = None
-        kalshi_direction = None
-
-    target = target_price(
-        market
-    )
-
-    confirmation = progressive_confirmation(
-        direction,
-        candles,
-    )
-
-    projected, velocity = projected_close(
-        btc,
-        remaining,
-        candles,
-    )
-
-    max_entry = maximum_entry(
-        probability
-    )
-
-    if direction == "SUBE":
-
-        live_direction_price = (
-            kalshi_up
-        )
-
-    else:
-
-        live_direction_price = (
-            kalshi_down
-            if kalshi_down is not None
-            else None
-        )
-
-    # ========================================================
-    # ALERTA DE GIRO
-    # ========================================================
-
-    if (
-        kalshi_direction
-        and kalshi_direction != direction
-    ):
-
-        st.markdown(
-            f"""
-            <div class="alert">
-                🚨 <b>ALERTA DE GIRO</b><br><br>
-                <span style="font-size:1.2rem;">
-                {direction} → {kalshi_direction}
-                </span>
+        <div class="metric">
+            <div class="metric-label">
+                Modelo
             </div>
-            """,
-            unsafe_allow_html=True,
+
+            <div class="metric-value">
+                {model_probability * 100:.1f}%
+            </div>
+        </div>
+
+        <div class="metric">
+            <div class="metric-label">
+                Entrada actual
+            </div>
+
+            <div class="metric-value">
+                {current_entry * 100:.1f}%
+            </div>
+        </div>
+
+        <div class="metric">
+            <div class="metric-label">
+                Máximo sugerido
+            </div>
+
+            <div class="metric-value yellow">
+                {max_entry * 100:.1f}%
+            </div>
+        </div>
+
+        <div class="metric">
+            <div class="metric-label">
+                Posición
+            </div>
+
+            <div class="metric-value blue">
+                {POSITION_PERCENT}%
+            </div>
+        </div>
+
+    </div>
+
+    <div class="{entry_class}" style="margin-top:12px;">
+        {entry_status}
+    </div>
+
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+
+# ============================================================
+# PRÓXIMA VELA
+# ============================================================
+
+if seconds_left <= PREVIEW_SECONDS:
+
+    next_open = close_time
+
+    next_direction, next_probability, next_strength = (
+        preview_signal(
+            history,
+            next_open,
         )
-
-    # ========================================================
-    # LECTURA ACTUAL
-    # ========================================================
-
-    signal_class = (
-        "card-green"
-        if direction == "SUBE"
-        else "card-red"
     )
 
-    signal_icon = (
+    next_icon = (
         "🟢"
-        if direction == "SUBE"
+        if next_direction == "SUBE"
         else "🔴"
     )
 
-    signal_color = (
-        "signal-green"
-        if direction == "SUBE"
-        else "signal-red"
-    )
-
     st.markdown(
         f"""
-        <div class="card {signal_class}">
+<div class="card">
 
-            <div class="section-title">
-                LECTURA ACTUAL
-            </div>
+    <div class="section-title">
+        PRÓXIMA VELA
+    </div>
 
-            <div class="signal-row">
+    <div class="center">
 
-                <div>
-                    <div class="signal {signal_color}">
-                        {signal_icon} {direction}
-                    </div>
-
-                    <div class="muted">
-                        🔒 Dirección fija
-                    </div>
-                </div>
-
-                <div>
-                    <div class="prob">
-                        {probability * 100:.0f}%
-                    </div>
-
-                    <div class="muted">
-                        probabilidad estimada
-                    </div>
-                </div>
-
-            </div>
-
-            <div class="price">
-                {money(btc)}
-            </div>
-
-            <div class="muted">
-                Modelo fijo para esta vela
-            </div>
-
-            <br>
-
-            <div class="section-title">
-                Confirmación progresiva:
-                {confirmation}/3
-            </div>
-
-            <div style="
-                display:flex;
-                gap:8px;
-                margin-top:8px;
-            ">
-
-                <div style="
-                    flex:1;
-                    height:10px;
-                    border-radius:8px;
-                    background:
-                    {'#43df89' if confirmation >= 1 else '#26354c'};
-                "></div>
-
-                <div style="
-                    flex:1;
-                    height:10px;
-                    border-radius:8px;
-                    background:
-                    {'#43df89' if confirmation >= 2 else '#26354c'};
-                "></div>
-
-                <div style="
-                    flex:1;
-                    height:10px;
-                    border-radius:8px;
-                    background:
-                    {'#43df89' if confirmation >= 3 else '#26354c'};
-                "></div>
-
-            </div>
-
-            <div class="mini-card" style="margin-top:12px;">
-
-                🎯 <b>{direction} activa</b><br>
-
-                <span class="muted">
-                    La dirección permanece fija
-                    durante esta vela.
-                </span>
-
-            </div>
-
+        <div class="big">
+            {next_icon} {next_direction}
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
 
-    # ========================================================
-    # OBJETIVO + CIERRE
-    # ========================================================
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-
-        st.markdown(
-            f"""
-            <div class="mini-card">
-
-                <div class="mini-title">
-                    🎯 OBJETIVO KALSHI
-                </div>
-
-                <div class="mini-value">
-                    {money(target)}
-                </div>
-
-                <div class="muted">
-
-                    {
-                        f"Distancia: {((target-btc)/btc)*100:+.3f}%"
-                        if target is not None and btc
-                        else "Distancia: —"
-                    }
-
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    with col2:
-
-        st.markdown(
-            f"""
-            <div class="mini-card">
-
-                <div class="mini-title">
-                    ⏱️ CIERRE
-                </div>
-
-                <div class="mini-value">
-                    {countdown(remaining)}
-                </div>
-
-                <div class="muted">
-                    Cierre:
-                    {close_time.astimezone(NY).strftime("%I:%M %p")}
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    # ========================================================
-    # GUÍA PARA EL CIERRE
-    # ========================================================
-
-    guide_class = (
-        "guide-green"
-        if direction == "SUBE"
-        else "guide-red"
-    )
-
-    guide_text = (
-        "PROBABLE CIERRE SUBE"
-        if direction == "SUBE"
-        else "PROBABLE CIERRE BAJA"
-    )
-
-    velocity_per_second = (
-        velocity
-        if velocity is not None
-        else 0
-    )
-
-    if target is not None and btc is not None:
-
-        required_velocity = (
-            target - btc
-        ) / max(
-            remaining,
-            1,
-        )
-
-    else:
-
-        required_velocity = 0
-
-    st.markdown(
-        f"""
-        <div class="{guide_class}">
-
-            <div class="section-title">
-                GUÍA PARA EL CIERRE
-            </div>
-
-            <div class="guide-title">
-                {guide_text}
-                &nbsp;&nbsp;
-                {probability * 100:.0f}%
-            </div>
-
-            <div class="muted">
-                El cálculo usa el precio,
-                movimiento reciente y ritmo actual.
-            </div>
-
-            <br>
-
-            <div style="
-                display:flex;
-                gap:8px;
-            ">
-
-                <div class="mini-card"
-                     style="flex:1;">
-
-                    <div class="mini-title">
-                        CIERRE PROYECTADO
-                    </div>
-
-                    <div class="mini-value">
-                        {money(projected)}
-                    </div>
-
-                </div>
-
-                <div class="mini-card"
-                     style="flex:1;">
-
-                    <div class="mini-title">
-                        RITMO ACTUAL
-                    </div>
-
-                    <div class="mini-value">
-                        {velocity_per_second:+.2f} $/s
-                    </div>
-
-                </div>
-
-                <div class="mini-card"
-                     style="flex:1;">
-
-                    <div class="mini-title">
-                        RITMO NECESARIO
-                    </div>
-
-                    <div class="mini-value">
-                        {required_velocity:+.2f} $/s
-                    </div>
-
-                </div>
-
-            </div>
-
+        <div style="font-size:25px;font-weight:900;margin-top:4px;">
+            {next_probability * 100:.1f}%
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
 
-    # ========================================================
-    # KALSHI EN VIVO
-    # ========================================================
-
-    st.markdown(
-        """
-        <div class="card">
-
-            <div class="section-title">
-                📊 KALSHI EN VIVO
-            </div>
-
-        """,
-        unsafe_allow_html=True,
-    )
-
-    if kalshi_prob is not None:
-
-        st.markdown(
-            f"""
-            <div style="
-                display:flex;
-                justify-content:space-between;
-                font-size:1.15rem;
-                font-weight:800;
-            ">
-
-                <span>
-                    🟢 SUBE {kalshi_up*100:.0f}%
-                </span>
-
-                <span>
-                    🔴 BAJA {kalshi_down*100:.0f}%
-                </span>
-
-            </div>
-
-            <div class="kalshi-bar">
-
-                <div class="bar-up"
-                     style="width:{kalshi_up*100}%">
-
-                    {kalshi_up*100:.0f}%
-
-                </div>
-
-                <div class="bar-down"
-                     style="width:{kalshi_down*100}%">
-
-                    {kalshi_down*100:.0f}%
-
-                </div>
-
-            </div>
-
-            <br>
-
-            Dirección en vivo:
-            <b>{kalshi_direction}</b>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    else:
-
-        st.write(
-            "Kalshi no tiene precio disponible."
-        )
-
-    st.markdown(
-        "</div>",
-        unsafe_allow_html=True,
-    )
-
-    # ========================================================
-    # MEJOR ENTRADA
-    # ========================================================
-
-    st.markdown(
-        """
-        <div class="card">
-
-            <div class="section-title">
-                💰 MEJOR ENTRADA
-            </div>
-
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.write(
-        f"Probabilidad modelo: "
-        f"**{probability*100:.1f}%**"
-    )
-
-    if max_entry is not None:
-
-        st.write(
-            f"Entrada máxima sugerida: "
-            f"**{max_entry*100:.1f}¢**"
-        )
-
-    if live_direction_price is not None:
-
-        st.write(
-            f"Precio actual de dirección: "
-            f"**{live_direction_price*100:.1f}¢**"
-        )
-
-        if (
-            max_entry is not None
-            and live_direction_price
-            <= max_entry
-        ):
-
-            st.markdown(
-                """
-                <div class="favorable">
-                    ✅ ENTRADA FAVORABLE
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-        else:
-
-            st.markdown(
-                """
-                <div class="wait">
-                    ⏳ ESPERAR MEJOR PRECIO
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-    st.markdown(
-        "</div>",
-        unsafe_allow_html=True,
-    )
-
-    # ========================================================
-    # TAMAÑO
-    # ========================================================
-
-    st.markdown(
-        f"""
-        <div class="card">
-
-            <div class="section-title">
-                📊 TAMAÑO SUGERIDO
-            </div>
-
-            <div style="
-                font-size:1.45rem;
-                font-weight:850;
-            ">
-                {POSITION_SIZE}% del capital
-            </div>
-
-            <div class="muted">
-                Sugerencia de gestión de riesgo.
-                No realiza ninguna compra.
-            </div>
-
+        <div class="muted">
+            Fuerza: {next_strength}
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
 
-    # ========================================================
-    # RADAR
-    # ========================================================
-
-    st.markdown(
-        """
-        <div class="card">
-
-            <div class="section-title">
-                🚨 RADAR TEMPRANO
-            </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    if (
-        kalshi_direction
-        and kalshi_direction != direction
-    ):
-
-        st.warning(
-            f"Kalshi está mostrando "
-            f"**{kalshi_direction}** mientras "
-            f"la señal fija es **{direction}**."
-        )
-
-    else:
-
-        st.success(
-            "Sin giro significativo."
-        )
-
-    st.markdown(
-        "</div>",
-        unsafe_allow_html=True,
-    )
-
-    # ========================================================
-    # PRÓXIMA VELA
-    # ========================================================
-
-    if remaining <= PREVIEW_SECONDS:
-
-        nxt = next_market(
-            markets,
-            ticker,
-        )
-
-        if nxt:
-
-            nxt_ticker = nxt.get(
-                "ticker"
-            )
-
-            nxt_open = parse_dt(
-                nxt.get("open_time")
-            )
-
-            if nxt_ticker and nxt_open:
-
-                nxt_signal = locked_signal(
-                    nxt_ticker,
-                    nxt_open.isoformat(),
-                )
-
-                if nxt_signal:
-
-                    st.markdown(
-                        f"""
-                        <div class="next-card">
-
-                            <div class="section-title">
-                                🔮 PRÓXIMA VELA
-                            </div>
-
-                            <div style="
-                                font-size:1.35rem;
-                                font-weight:850;
-                            ">
-
-                                {
-                                    '🟢 SUBE'
-                                    if nxt_signal['direction'] == 'SUBE'
-                                    else '🔴 BAJA'
-                                }
-
-                                &nbsp;&nbsp;
-
-                                {nxt_signal['probability']*100:.0f}%
-
-                            </div>
-
-                            <div class="muted">
-                                Preliminar.
-                                Se activa cuando comience
-                                la nueva vela.
-                            </div>
-
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-
-    # ========================================================
-    # INFORMACIÓN
-    # ========================================================
-
-    st.markdown(
-        f"""
-        <div style="
-            text-align:center;
-            color:#78849a;
-            font-size:.78rem;
-            margin-top:15px;
-        ">
-
-            Mercado: {ticker}<br>
-
-            Actualización automática cada
-            {REFRESH_SECONDS} segundos<br>
-
-            🟢 Señales solamente •
-            Sin compras automáticas
-
+        <div class="muted" style="margin-top:8px;">
+            Vista preliminar — todavía no reemplaza la señal actual.
         </div>
-        """,
+
+    </div>
+
+</div>
+""",
         unsafe_allow_html=True,
     )
 
 
 # ============================================================
-# EJECUTAR
+# INFORMACIÓN
 # ============================================================
 
-dashboard()
+st.markdown(
+    """
+<div class="footer">
+    Señal principal bloqueada por vela de 15 minutos.<br>
+    Los datos de Kalshi se actualizan en vivo.<br>
+    Este bot genera señales y no ejecuta órdenes automáticamente.
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+
+# ============================================================
+# ACTUALIZACIÓN
+# ============================================================
+
+time.sleep(REFRESH_SECONDS)
+
+st.rerun()
