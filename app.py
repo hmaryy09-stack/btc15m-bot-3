@@ -210,6 +210,289 @@ else:
     direction, probability = "SUBE", 0.55
 
 now = datetime.now(NY)
+# =========================================================
+# LECTURA PRINCIPAL FIJA
+# =========================================================
+
+st.subheader("🔒 LECTURA ACTUAL — FIJA")
+
+st.markdown(
+    '<div class="fixed"><b>SEÑAL DEL MODELO</b><br>'
+    'Esta dirección permanece fija durante toda la vela.</div>',
+    unsafe_allow_html=True,
+)
+
+if direction == "SUBE":
+    st.success(f"▲ SUBE — {probability * 100:.0f}%")
+else:
+    st.error(f"▼ BAJA — {probability * 100:.0f}%")
+
+st.write(
+    "🔒 La dirección NO cambia hasta que termine "
+    "la vela de 15 minutos."
+)
+
+if btc:
+    st.metric("BTC", f"${btc:,.2f}")
+
+
+# =========================================================
+# OBJETIVO Y CIERRE
+# =========================================================
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader("🎯 OBJETIVO KALSHI")
+
+    st.metric(
+        "Objetivo",
+        f"${target:,.2f}" if target else "—"
+    )
+
+with col2:
+    st.subheader("⏱️ CIERRE")
+
+    if close_time:
+
+        seconds = max(
+            0,
+            int(
+                (
+                    close_time
+                    - datetime.now(timezone.utc)
+                ).total_seconds()
+            ),
+        )
+
+        st.metric(
+            "Tiempo",
+            f"{seconds // 60:02d}:{seconds % 60:02d}"
+        )
+
+        st.caption(
+            "Cierre "
+            + close_time.astimezone(NY).strftime("%-I:%M %p")
+        )
+
+    else:
+        st.write("—")
+
+
+# =========================================================
+# GUÍA PARA EL CIERRE
+# =========================================================
+
+st.subheader("📉 GUÍA PARA EL CIERRE")
+
+st.write(
+    f"**PROBABLE CIERRE {direction}**"
+)
+
+st.write(
+    f"Probabilidad estimada: "
+    f"**{probability * 100:.0f}%**"
+)
+
+if btc and target:
+
+    distance = (
+        (btc - target)
+        / target
+        * 100
+    )
+
+    st.write(
+        f"Distancia al objetivo: "
+        f"**{distance:+.3f}%**"
+    )
+
+
+# =========================================================
+# KALSHI EN VIVO
+# =========================================================
+
+st.subheader("📊 KALSHI EN VIVO")
+
+st.markdown(
+    '<div class="live"><b>LECTURA DEL MERCADO</b><br>'
+    'Esta parte SÍ puede subir o bajar durante la misma vela. '
+    'No cambia la dirección fija del modelo.</div>',
+    unsafe_allow_html=True,
+)
+
+if kalshi is not None:
+
+    up = kalshi
+    down = 1 - kalshi
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.success(
+            f"🟢 SUBE {up * 100:.0f}%"
+        )
+
+    with col2:
+        st.error(
+            f"🔴 BAJA {down * 100:.0f}%"
+        )
+
+else:
+
+    st.write(
+        "Esperando datos de Kalshi..."
+    )
+
+
+# =========================================================
+# MODELO VS KALSHI
+# =========================================================
+
+st.subheader("🔎 MODELO VS KALSHI")
+
+if kalshi is not None:
+
+    kalshi_side = (
+        kalshi
+        if direction == "SUBE"
+        else 1 - kalshi
+    )
+
+    st.write(
+        f"Señal fija del modelo: "
+        f"**{direction} {probability * 100:.0f}%**"
+    )
+
+    st.write(
+        f"Kalshi a favor de la señal: "
+        f"**{kalshi_side * 100:.0f}%**"
+    )
+
+else:
+
+    st.write(
+        "Esperando lectura de Kalshi..."
+    )
+
+
+# =========================================================
+# GUÍA DE ENTRADA
+# =========================================================
+
+st.subheader("💰 GUÍA DE ENTRADA")
+
+max_entry = probability / 1.10
+
+st.metric(
+    "Entrada máxima sugerida",
+    f"{max_entry * 100:.1f}%"
+)
+
+st.write(
+    "Posición sugerida: **25%**"
+)
+
+st.caption(
+    "Solo señales. Sin compras automáticas."
+)
+
+
+# =========================================================
+# RADAR
+# =========================================================
+
+st.subheader("🚨 RADAR")
+
+if kalshi is not None:
+
+    kalshi_side = (
+        kalshi
+        if direction == "SUBE"
+        else 1 - kalshi
+    )
+
+    difference = abs(
+        kalshi_side - probability
+    )
+
+    if difference >= 0.15:
+
+        st.warning(
+            "⚠️ Kalshi está bastante "
+            "separado del modelo."
+        )
+
+    elif difference >= 0.08:
+
+        st.info(
+            "👀 Hay diferencia entre "
+            "el modelo y Kalshi."
+        )
+
+    else:
+
+        st.success(
+            "✅ Modelo y Kalshi están "
+            "relativamente alineados."
+        )
+
+else:
+
+    st.info(
+        "Esperando lectura de Kalshi."
+    )
+
+
+# =========================================================
+# ESTADO DE LA VELA
+# =========================================================
+
+st.subheader("🔐 ESTADO DE LA VELA")
+
+if ticker and close_time:
+
+    st.write(
+        f"Ticker: **{ticker}**"
+    )
+
+    st.write(
+        f"Dirección bloqueada: **{direction}**"
+    )
+
+    st.write(
+        "La dirección se renovará únicamente "
+        "cuando comience una nueva vela "
+        "de 15 minutos."
+    )
+
+else:
+
+    st.write(
+        "Esperando una vela activa de Kalshi..."
+    )
+
+
+# =========================================================
+# PIE
+# =========================================================
+
+st.divider()
+
+st.caption(
+    "BTC 15 MIN • Hora de Nueva York • "
+    "Señales solamente"
+)
+
+
+# =========================================================
+# ACTUALIZACIÓN
+# =========================================================
+
+time.sleep(REFRESH)
+
+st.rerun()
+
 
 
 # =========================================================
