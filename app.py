@@ -2,6 +2,16 @@ import time
 import math
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
+from textwrap import dedent
+import streamlit as st
+_original_markdown = st.markdown
+
+def markdown_fixed(body="", *args, **kwargs):
+    if isinstance(body, str):
+        body = dedent(body)
+    return _original_markdown(body, *args, **kwargs)
+
+st.markdown = markdown_fixed
 
 import requests
 import streamlit as st
